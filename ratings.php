@@ -1,5 +1,13 @@
-<html>
+<?php
 
+//redirects if user is not logged in
+session_start();
+if (empty($_SESSION['username']) || !isset($_SESSION['username']))
+    header('Location: index.html');
+
+?>
+
+<html>
 <head>
 <title>Movie Ratings Database</title>
 <link rel="stylesheet" href="rating-style.css" type="text/css">
@@ -38,14 +46,12 @@
 
         return complete;
 	}
-
 </script>
 </head>
 
 <body>
-
 <table>
-    <tr><td style="font-size: 42px; background-color: #c2c2d6;">
+<tr><td style="font-size: 42px; background-color: #c2c2d6;">
 Movie Ratings Database
 </td></tr>
 </table>
@@ -60,17 +66,18 @@ Movie Ratings Database
 
 <?php
 
-
+    //connect with DB
     $connection = new mysqli("cis.gvsu.edu", "toneyc", "toneyc");
     $connection->select_db("toneyc");
 
+    //if post data is set, insert into table
     if (isset($_POST['title']) && isset($_POST['year'])) {
         $sql="INSERT INTO movies (title, year, runtime, rating) VALUES ('$_POST[title]', '$_POST[year]', '$_POST[runtime]', '$_POST[rating]')";
         $r = $connection->query($sql);
     }
 
+    //fetch data from movie table and generate table
     $sql = "select * from movies";
-
     $result = $connection->query($sql);
 
     while ($row = $result->fetch_array()) {
@@ -86,13 +93,17 @@ Movie Ratings Database
     	echo '</td></tr>';
     }
 
-    $connection->close();
+//if user is superuser, generate form for submitting movies
+$user = $_SESSION['username'];
+$sql="select * from users where username = '$user'";
+$arr = $connection ->query($sql);
+foreach($arr as $a) {
+    $u = $a["superuser"];
+}
 
-
-
-?>
-</table>
-<table>
+echo '</table><table>';
+if ($u == 1) {
+echo '
     <col width="350">
     <tr>
         <th>Title</th>
@@ -109,11 +120,19 @@ Movie Ratings Database
 	<td><input type="text" name="runtime" id="runtime"></td>
 	<td><input type="text" name="rating" id="rating"></td>
     <td><input type="submit" value="Submit" class="movieButton"></td>
-</tr>
+</tr>';}
+
+//add in table row for signing out
+echo '
+<tr><td><a href="index.html">Sign-out</a></td><td></td><td></td><td></td><td></td></tr>
 </table>
-</form>
+</form>';
+
+//close DB connection
+$connection->close();
+
+?>
 
 
 </body>
-
 </html>
